@@ -47,6 +47,13 @@ if __name__ == "__main__":
     m1_tf = get_stft(m1)
     m2_tf = get_stft(m2)
 
+    
+    ## 3개 loss 구하는 방법 ##
+
+    # Dominant Source (DS) mask
+    # Unsupervised Binary Phase Difference(BPD) mask
+    # Unsupervised Raw Phase Difference (RPD) features
+
 
     b = 0
     #
