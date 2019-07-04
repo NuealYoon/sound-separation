@@ -267,7 +267,6 @@ class TFMaskEstimator(object):
             return infer_mask
 
 
-
 ############################################################
 
 def construct_mixture_info(speakers_dic,
@@ -402,7 +401,6 @@ def get_only_valid_mixture_combinations(possible_sources,
 
     return valid_mixtures
 
-
 if __name__ == "__main__":
 
     ###################################################
@@ -420,12 +418,10 @@ if __name__ == "__main__":
     data_dic = data_loader.load()
     subset_of_speakers = 'train'
 
-
     genders_mixtures = ['M','F']
     valid_genders = [(g in ['f', 'm'])
                      for g in genders_mixtures]
     assert valid_genders, ('Valid genders for mixtures are f and m')
-
 
     # used_speakers = get_available_speakers(subset_of_speakers, data_dic, genders_mixtures)
     try:
@@ -436,7 +432,6 @@ if __name__ == "__main__":
 
     valid_speakers = []
     for speaker in available_speakers:
-
         if ((data_dic[subset_of_speakers][speaker]['gender'] in genders_mixtures)):
             valid_speakers.append(speaker)
 
@@ -444,16 +439,14 @@ if __name__ == "__main__":
 
     print("All Available Speakers are {}".format(len(used_speakers)))
 
-
     val_speakers = []
-
     used_speakers = [s for s in used_speakers if s not in val_speakers]
 
     min_duration = 2.0
     fs = 16000
 
     min_samples = int(min_duration * fs)
-    convolution_offset =  2000
+    convolution_offset = 2000
     return_phase_diff = True
 
     ##############################################################
@@ -515,8 +508,8 @@ if __name__ == "__main__":
        [{'gender': 'm', 'sentence_id': 'sx298', 'speaker_id': 'mctt0'},
         {'gender': 'm', 'sentence_id': 'sx364', 'speaker_id': 'mrjs0'},
        {'gender': 'f', 'sentence_id': 'sx369', 'speaker_id': 'fgjd0'}]
-
     """
+
     speakers_dic = data_dic[subset_of_speakers]
 
     possible_sources = []
@@ -542,13 +535,11 @@ if __name__ == "__main__":
 
     random_positioner = positions_generator.RandomCirclePositioner()
 
-
     mixtures_info = []
     for combination in valid_combinations:
         random_positioner_value = random_positioner.get_sources_locations(len(combination))
         mixture_info = construct_mixture_info(speakers_dic, combination, random_positioner_value)
         mixtures_info.append(mixture_info)
-
 
     print("Created the combinations of all the speakers and "  "ready to process each mixture separately!")
 
@@ -614,6 +605,4 @@ if __name__ == "__main__":
         # return l_copy
 
         ###
-
         print("Successfully stored {} mixtures".format(sum(mixtures_info)))
-
