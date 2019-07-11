@@ -40,7 +40,15 @@ def update_label_masks_and_info(mixture_info,
     name = name.replace("\\", "!!")
     data = {}
 
+    # 1. mixture_info - dictionalry type으로 positions과 source_ids의 id를 가지고 있다.
+    # :positions - 2명 소스의 공간 정보
+    #   -> thetas, d_thetas, xy_positions, distances, 'm2m1', 'm2m2', 'm2s1', 'm2s2', 's1m1', 's1m2', 's1s1', 's1s2', 's2m1', 's2m2'  's2s1', 's2s2', 'taus', 'amplitudes'
+    # :source_ids - 2명 소스의 wav 데이터, wav 위치, gender, speaker_id, fs
+    #   -> wav, fs, wav_path, sentence_id, gender, speaker_id
+    # 2. tf_mixture
+    # :'m1_raw', 'm2_raw', 'm1_tf', 'm2_tf', 'sources_raw', 'sources_tf', 'amplitudes'
     tf_mixture = mixture_creator.construct_mixture(mixture_info)
+
     gt_mask = ground_truth_estimator.infer_mixture_labels(tf_mixture)
     data['ground_truth_mask'] = gt_mask
     data['real_tfs'] = np.real(tf_mixture['m1_tf'])
@@ -186,7 +194,7 @@ def duet_kmeans_inference(mixture_info, return_phase_features=False):
                                             sources_complex_spectra])
 
     # 복소수의 곱셈과 나눗셈
-    # https: // j1w2k3.tistory.com / 1008
+    # https://j1w2k3.tistory.com/1008
 
     r = mixture_info['m1_tf'] / (mixture_info['m2_tf'] + 1e-7) # m1과 m2의 편각 차이를 구한다. r == 편각
     # phase_dif = np.angle(r) / np.linspace(1e-5, np.pi, mixture_info['m1_tf'].shape[0])[:, None]
@@ -469,7 +477,7 @@ if __name__ == "__main__":
     n_mixtures = 5
     selected_partition = None
     force_delays = None
-    output_dir = 'F:/Datas/음성데이터/timit_wav/spatial_two_mics_data'
+    output_dir = 'D:/Datas/음성데이터/timit_wav/spatial_two_mics_data'
     get_only_ground_truth = None
 
     speakers = used_speakers

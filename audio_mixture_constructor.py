@@ -100,8 +100,7 @@ class AudioMixtureConstructor(object):
         mic_signals = {'m1': [], 'm2': []}
         for src_id, source_sig in enumerate(source_signals):
             sig_len = source_sig.shape[0]
-            augmented_signal = np.zeros(
-                sig_len + (sig_len - 1) * n_augmentation_zeros)
+            augmented_signal = np.zeros( sig_len + (sig_len - 1) * n_augmentation_zeros)
             augmented_signal[::upsampling_rate] = source_sig
             est_augmented_sig = np.convolve(augmented_signal,
                                             self.windowed_sinc,
@@ -174,7 +173,6 @@ class AudioMixtureConstructor(object):
             # cropped_signals = [s[:int(self.mixture_duration * fs)]
             #                    for (s, sr) in source_signals]
 
-
             # mic_signals = {
             #     'm1': [self.force_delay_on_signal(s,  int(m1_delays[i]))
             #            for (i, s) in enumerate(cropped_signals)],
@@ -217,6 +215,7 @@ class AudioMixtureConstructor(object):
                           for s in mixture_info['sources_ids']]
         n_sources = len(source_signals)
 
+        # 각 mic에 들어오는 2개 source들의 신호(아마도 딜레이 되는 신호인듯)
         mic_signals = self.construct_mic_signals(source_signals, positions['taus'])
 
         # m1 = sum([positions['amplitudes'][i] * mic_signals['m1'][i]

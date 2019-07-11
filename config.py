@@ -15,10 +15,10 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TIMIT_PATH = "F:/Datas/음성데이터/timit_wav"
-# DATASETS_DIR = "F:/Datas/음성데이터/timit_wav/spatial_two_mics_data/"
-DATASETS_DIR = "F:/Datas/음성데이터/timit_wav"
-MODELS_DIR = "F:/Datas/음성데이터/timit_wav/spatial_two_mics_models/"
+TIMIT_PATH = "D:/Datas/음성데이터/timit_wav"
+# DATASETS_DIR = "D:/Datas/음성데이터/timit_wav/spatial_two_mics_data/"
+DATASETS_DIR = "D:/Datas/음성데이터/timit_wav"
+MODELS_DIR = "D:/Datas/음성데이터/timit_wav/spatial_two_mics_models/"
 RESULTS_DIR = "/mnt/nvme/spatial_two_mics_results/"
 MODELS_RAW_PHASE_DIR = "/mnt/nvme/spatial_two_mics_models_raw_phase/"
 MODELS_GROUND_TRUTH = "/mnt/nvme/spatial_two_mics_models_ground_truth/"

@@ -3,6 +3,12 @@ import sys
 import torch
 
 
+import utils.data_conversions as converters
+import utils.update_history as update_history
+
+import torch.nn as nn
+import simple_LSTM_encoder as LSTM_enc
+from sklearn.cluster import KMeans
 
 ########################
 ## 데이터 로드 import ##
@@ -247,6 +253,7 @@ if __name__ == "__main__":
 
     num_workers = 1
     n_train = None
+    n_val = None
     batch_size = 1
     training_labels = 'duet'
 
@@ -261,3 +268,131 @@ if __name__ == "__main__":
                                      return_n_batches=True,
                                      labels_mask=training_labels,
                                      return_n_sources=True)
+
+
+    # val_generator, n_val_batches, n_val_sources = fast_data_gen.get_data_generator(args.val,
+    val_generator, n_val_batches, n_val_sources = get_data_generator(val_path,
+                                     partition='val',
+                                     num_workers=num_workers,
+                                     return_stats=False,
+                                     get_top=n_val,
+                                     batch_size=batch_size,
+                                     return_n_batches=True,
+                                     labels_mask=None,
+                                     return_n_sources=True)
+
+    n_layers = 2
+    hidden_size = 1024
+    embedding_depth = 16
+    bidirectional = True
+    dropout = 0.0
+    model = LSTM_enc.BLSTMEncoder(num_layers=n_layers,
+                                  hidden_size=hidden_size,
+                                  embedding_depth=embedding_depth,
+                                  bidirectional=bidirectional,
+                                  dropout=dropout)
+    model = nn.DataParallel(model).cuda()
+
+    learning_rate = 0.0001
+
+    optimizer = torch.optim.Adam(model.parameters(),
+                                 lr=learning_rate,
+                                 betas=(0.9, 0.999))
+
+
+
+    k_means_obj = KMeans(n_clusters=n_tr_sources)
+    # just iterate over the data
+    history = {}
+    epochs = 1000
+    for epoch in np.arange(epochs):
+
+
+        # train(model, training_generator, optimizer, mean_tr,
+        #       std_tr, epoch, history, n_tr_batches, n_tr_sources,
+        #       training_labels=args.training_labels)
+
+        n_sources = n_tr_sources
+
+        n_batches = n_tr_batches
+        model.train()
+        # bar = ChargingBar("Training for epoch: {}...".format(epoch), max=n_batches)
+        for batch_data in training_generator:
+            (abs_tfs, masks) = batch_data
+            input_tfs, index_ys = abs_tfs.cuda(), masks.cuda()
+            # the input sequence is determined by time and not freqs
+            # before: input_tfs = batch_size x (n_fft/2+1) x n_timesteps
+            input_tfs = input_tfs.permute(0, 2, 1).contiguous()
+            index_ys = index_ys.permute(0, 2, 1).contiguous()
+
+            # normalize with mean and variance from the training dataset
+            input_tfs -= mean_tr
+            input_tfs /= std_tr
+
+            if training_labels == 'raw_phase_diff':
+                flatened_ys = index_ys.view(index_ys.size(0), -1, 1)
+            else:
+                # index_ys = index_ys.permute(0, 2, 1).contiguous()
+                one_hot_ys = converters.one_hot_3Dmasks(index_ys, n_sources)
+                flatened_ys = one_hot_ys.view(one_hot_ys.size(0), -1, one_hot_ys.size(-1)).cuda()
+
+            optimizer.zero_grad()
+            vs = model(input_tfs)
+
+            # loss = affinity_losses.paris_naive(vs, flatened_ys)
+            # loss = paris_naive(vs, flatened_ys)
+            vs = vs             # vs: size: batch_size x n_elements x embedded_features
+            ys = flatened_ys    # ys: One hot tensor corresponding to 1 where a specific
+            vs_vs_loss = torch.sqrt(torch.mean(torch.bmm(vs.transpose(1, 2), vs) ** 2))
+            vs_ys_loss = 2. * torch.sqrt(torch.mean(torch.bmm(vs.transpose(1, 2), ys) ** 2))
+            ys_ys_loss = torch.sqrt(torch.mean(torch.bmm(ys.transpose(1, 2), ys) ** 2))
+            loss = vs_vs_loss - vs_ys_loss + ys_ys_loss
+
+
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), 100.)
+            optimizer.step()
+
+            update_history.values_update([('loss', loss)], history, update_mode='batch')
+        #     bar.next()
+        # bar.finish()
+
+        update_history.values_update([('loss', None)], history, update_mode='epoch')
+        #
+        # if epoch % args.eval_per == 0:
+        #     eval(model, val_generator, mean_tr, std_tr, epoch,
+        #          history, n_val_batches, k_means_obj, n_val_sources,
+        #          args.batch_size)
+        #
+        #     update_history.values_update([('sdr', None),
+        #                                   ('sir', None),
+        #                                   ('sar', None)],
+        #                                  history,
+        #                                  update_mode='epoch')
+        #
+        #     # keep track of best performances so far
+        #     epoch_performance_dic = {
+        #         'sdr': history['sdr'][-1],
+        #         'sir': history['sir'][-1],
+        #         'sar': history['sar'][-1]
+        #     }
+        #     update_history.update_best_performance(
+        #                    epoch_performance_dic, epoch, history,
+        #                    buffer_size=args.save_best)
+        #
+        #     # save the model if it is one of the best according to SDR
+        #     if (history['sdr'][-1] >= history['best_performances'][-1][0]['sdr']):
+        #         dataset_id = os.path.basename(args.train)
+        #
+        #         model_logger.save(model,
+        #                           optimizer,
+        #                           args,
+        #                           epoch,
+        #                           epoch_performance_dic,
+        #                           dataset_id,
+        #                           mean_tr,
+        #                           std_tr,
+        #                           training_labels=args.training_labels)
+        #
+        # pprint(history['loss'][-1])
+        # pprint(history['best_performances'])
